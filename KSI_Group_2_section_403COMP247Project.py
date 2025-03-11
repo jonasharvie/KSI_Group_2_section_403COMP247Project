@@ -90,6 +90,34 @@ unique_times = data_Group2['time2'].unique()
 for time in sorted(unique_times):
     print(time)
 
+from sklearn.model_selection import train_test_split
+import numpy as np
+
+# Remove rows where ACCLASS is empty
+data_Group2 = data_Group2.dropna(subset=["ACCLASS"])
+
+# Convert target variable into binary classification
+# Combining 'Property Damage O' with 'Non-Fatal Injury' into 'Non-Fatal'
+data_Group2["ACCLASS"] = data_Group2["ACCLASS"].replace("Property Damage O", "Non-Fatal")
+
+# Encode target variable as binary (1 = Fatal, 0 = Non-Fatal)
+data_Group2["ACCLASS"] = np.where(data_Group2["ACCLASS"] == "Fatal", 1, 0)
+
+# Define features (X) and target variable (y)
+X = data_Group2.drop(columns=["ACCLASS"])  # Features
+y = data_Group2["ACCLASS"]  # Target
+
+# Perform Train-Test Split (80% train, 20% test) with stratification
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=23, stratify=y
+)
+
+# Print class distribution in train and test sets
+print("Training set class distribution:\n", y_train.value_counts(normalize=True))
+print("Test set class distribution:\n", y_test.value_counts(normalize=True))
+
+print("Train-Test Split Completed Successfully!")
+
 #######################
 """
 Both the police department and the “general public” would make use of a software product that can give them an idea about the likelihood of fatal collisions that involve loss of life. For the police department it would assist them in taking better measures of security and better planning for road conditions around certain neighborhoods. For the public individuals, it would help them assess the need for additional precautions at certain times and weather conditions and neighborhoods
@@ -169,6 +197,8 @@ decide on cutoff point for too many unique variables
 #Use pipelines class to streamline all the pre-processing transformations
 
 print("done")
+
+
 
 
 
