@@ -11,6 +11,9 @@ import seaborn as sns
 import numpy as np
 from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.feature_selection import VarianceThreshold
 
 
 #1. Data exploration: a complete review and analysis of the dataset including:
@@ -133,6 +136,114 @@ for time in sorted(unique_times):
 
 # Remove rows where ACCLASS is empty
 data_Group2 = data_Group2.dropna(subset=["ACCLASS"])
+
+
+#Jose's Data Transformation ----------------------Begin----------------------
+# List of columns to drop, based on spreadsheet we decided to remove
+columns_to_drop = [
+    "INDEX_", "ACCNUM", "DATE", "OFFSET", "LATITUDE", "LONGITUDE", "INJURY", "FATAL_NO", 
+    "VEHTYPE", "PEDTYPE", "PEDACT", "CYCLISTYPE", "CYCACT", "AUTOMOBILE", "EMERG_VEH", 
+    "ALCOHOL", "DISABILITY", "NEIGHBOURHOOD_158", "HOOD_140", "NEIGHBOURHOOD_140", 
+    "DIVISION", "ObjectID", "x", "y"
+]
+
+# Drop the columns
+data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
+# Handle missing values for numerical columns (using mean/median)
+numerical_columns = data_Group2.select_dtypes(include=["int64", "float64"]).columns
+for col in numerical_columns:
+    # Fill missing values with the median of each column
+    data_Group2[col].fillna(data_Group2[col].median(), inplace=True)
+
+# Handle missing values for categorical columns (replacing with "Unknown")
+categorical_columns = data_Group2.select_dtypes(include=["object"]).columns
+for col in categorical_columns:
+    # Fill missing values with "Unknown" to avoid noise
+    data_Group2[col].fillna("Unknown", inplace=True)
+
+# Verify changes
+print("Columns after dropping and handling missing data:")
+print(data_Group2.columns)
+print("\nMissing values per column:")
+print(data_Group2.isnull().sum())
+
+#Encoding Categorical Values
+# List of fields for One-Hot Encoding (fields with relatively fewer categories)
+one_hot_fields = ['ROAD_CLASS', 'TRAFFCTL', 'LIGHT', 'VISIBILITY', 'RDSFCOND']
+
+# Apply One-Hot Encoding
+data_Group2 = pd.get_dummies(data_Group2, columns=one_hot_fields, drop_first=True)
+
+# List of fields for Label Encoding (fields where a numeric label suffices)
+label_encode_fields = ['IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND', 'PEDESTRIAN', 
+                       'CYCLIST', 'MOTORCYCLE', 'TRUCK', 'PASSENGER', 'SPEEDING', 
+                       'AG_DRIV', 'REDLIGHT', 'HOOD_158']
+
+# Apply Label Encoding
+label_encoder = LabelEncoder()
+for field in label_encode_fields:
+    data_Group2[field] = label_encoder.fit_transform(data_Group2[field])
+
+# Verify the changes
+print("\nSample of data after encoding:")
+print(data_Group2.head())
+
+#Date and Time Handling
+# Extract hour from the TIME column
+data_Group2['Hour'] = data_Group2['TIME'] // 100  # Assuming TIME is in HHMM format (e.g., 2359)
+
+# Create categorical time periods (Morning, Afternoon, Evening, Night)
+def categorize_time(hour):
+    if 6 <= hour < 12:
+        return "Morning"
+    elif 12 <= hour < 18:
+        return "Afternoon"
+    elif 18 <= hour < 24:
+        return "Evening"
+    else:
+        return "Night"
+
+# Apply the function to create a new column
+data_Group2['Time_Period'] = data_Group2['Hour'].apply(categorize_time)
+
+# Check unique categories to verify
+print("\nUnique values in Time_Period:")
+print(data_Group2['Time_Period'].unique())
+
+# Apply One-Hot Encoding robustly to include all possible categories
+time_period_dummies = pd.get_dummies(data_Group2['Time_Period'], prefix="Time_Period", drop_first=False)
+
+# Concatenate the encoded columns back to the DataFrame
+data_Group2 = pd.concat([data_Group2, time_period_dummies], axis=1)
+
+# Drop the original 'Time_Period' column as it's now encoded
+data_Group2.drop(columns=['Time_Period'], inplace=True)
+
+# Verify changes
+print("\nSample of data with extracted time features:")
+print(data_Group2[['TIME', 'Hour', 'Time_Period_Morning', 'Time_Period_Afternoon', 'Time_Period_Evening', 'Time_Period_Night']].head())
+
+#Normalizing or Standardizing Features
+# List of numeric fields to normalize/standardize
+numeric_fields = ['TIME']
+
+# Min-Max Normalization (scaling values to range [0, 1])+
+min_max_scaler = MinMaxScaler()
+data_Group2['TIME_Normalized'] = min_max_scaler.fit_transform(data_Group2[['TIME']])
+
+# Standardization (scaling values to have mean 0 and standard deviation 1)
+standard_scaler = StandardScaler()
+data_Group2['TIME_Standardized'] = standard_scaler.fit_transform(data_Group2[['TIME']])
+
+# Verify changes
+print("\nSample of normalized and standardized TIME values:")
+print(data_Group2[['TIME', 'TIME_Normalized', 'TIME_Standardized']].head())
+#Jose's Data Transformation ----------------------END----------------------
+
+#Feature Selection
+#Based on spreadsheet filled out by group members
+
 
 # Convert target variable into binary classification
 # Combining 'Property Damage O' with 'Non-Fatal Injury' into 'Non-Fatal'
