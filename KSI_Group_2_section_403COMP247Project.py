@@ -8,8 +8,9 @@ Created on Sun Feb 23 02:59:10 2025
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
-print('Testing')
+
 
 #1. Data exploration: a complete review and analysis of the dataset including:
 
@@ -34,6 +35,42 @@ print(data_Group2.isnull().sum())
 # created a pairplot of all variables in the dataset
 #data_plot_Group2 = sns.pairplot(data_Group2)
 #plt.show()
+
+
+
+# Barplot for road classification
+plt.figure(figsize=(10, 6))
+sns.countplot(data=data_Group2, x='ROAD_CLASS')
+plt.title('Accidents by Road Classification')
+plt.xlabel('Road Classification')
+plt.ylabel('Number of Accidents')
+plt.xticks(rotation=45)
+plt.show()
+
+#Scatterplot for geographic distribution
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=data_Group2, x='LONGITUDE', y='LATITUDE')
+plt.title('Accidents Location')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.show()
+
+#Visualization for Accidents by District
+plt.figure(figsize=(10, 6))
+sns.countplot(data=data_Group2, x='DISTRICT')
+plt.title('Accidents by City District')
+plt.xlabel('City District')
+plt.ylabel('Number of Accidents')
+plt.xticks(rotation=45)
+plt.show()
+
+# Heatmap for missing data
+plt.figure(figsize=(10, 6))
+sns.heatmap(data_Group2.isnull(), cbar=False, cmap='viridis')
+plt.title('Missing Data Visualization')
+plt.show()
+
+
 
 #2. Data modelling:
 
