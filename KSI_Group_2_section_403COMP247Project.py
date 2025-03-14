@@ -9,7 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 
 #1. Data exploration: a complete review and analysis of the dataset including:
@@ -128,8 +129,7 @@ unique_times = data_Group2['time2'].unique()
 for time in sorted(unique_times):
     print(time)
 
-from sklearn.model_selection import train_test_split
-import numpy as np
+
 
 # Remove rows where ACCLASS is empty
 data_Group2 = data_Group2.dropna(subset=["ACCLASS"])
