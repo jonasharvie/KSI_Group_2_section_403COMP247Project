@@ -316,10 +316,21 @@ Other Columns to Drop:
     ACCNUM
     
 ######################
+Keep CYCCOND as this helps to analyze cycle-related collisions and their impact on accident severity.
+Keep PEDESTRIAN because it helps in analyzing pedestrian safety and determining high-risk zones. 
+keep CYCLIST because Important for bicycle safety analysis and urban planning.
+Drop AUTOMOBILE because almost all accidents involve a driver; this feature is likely redundant.
+Keep MOTORCYCLE as it is important for analyzing patterns in motorcycle collissions and informing safety policies.
+Keep TRUCK as this is useful for identifying accident hotspots involving large vehicles.
+Keep TRSN_CITY_VEH because this could be useful for public policy and transit safety improvements.
+Keep PASSENGER because this helps in analyzing whether collisions involving passengers tend to be more severe.
+
+######################
+
 NOTE: check for columns with too many unique variables 
 SHOULD we drop all columns with too many unique variables?
 decide on cutoff point for too many unique variables 
-######################
+
 
  there are too many unique values, also the road names are easier representations of location
     LATITUDE
