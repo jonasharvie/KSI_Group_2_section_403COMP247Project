@@ -267,6 +267,73 @@ print("Test set class distribution:\n", y_test.value_counts(normalize=True))
 
 print("Train-Test Split Completed Successfully!")
 
+#Pipelines
+#Shakuntala 
+
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+
+# Define categorical and numerical features
+categorical_features = [col for col in ['ROAD_CLASS', 'TRAFFCTL', 'LIGHT', 'VISIBILITY', 'RDSFCOND',
+                                        'IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND', 'PEDESTRIAN',
+                                        'CYCLIST', 'MOTORCYCLE', 'TRUCK', 'PASSENGER', 'SPEEDING', 'AG_DRIV', 'REDLIGHT']
+                        if col in data_Group2.columns]
+
+numerical_features = [col for col in ['TIME'] if col in data_Group2.columns]
+
+# Define transformers
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('encoder', OneHotEncoder(handle_unknown='ignore'))
+])
+
+numerical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
+
+# Define the full preprocessing pipeline
+preprocessing_pipeline = Pipeline(steps=[
+    ('preprocessor', ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, numerical_features),
+            ('cat', categorical_transformer, categorical_features)
+        ],
+        remainder='passthrough'  # Keep other columns if necessary
+    ))
+])
+
+# Encode target variable if it exists
+if 'ACCLASS' in data_Group2.columns:
+    label_encoder = LabelEncoder()
+    data_Group2['ACCLASS'] = label_encoder.fit_transform(data_Group2['ACCLASS'])
+
+    # Define features (X) and target variable (y)
+    X = data_Group2.drop(columns=["ACCLASS"], errors='ignore')
+    y = data_Group2["ACCLASS"]
+
+    # Split into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=23, stratify=y
+    )
+
+    # Apply the full preprocessing pipeline to training and test data
+    X_train = preprocessing_pipeline.fit_transform(X_train)
+    X_test = preprocessing_pipeline.transform(X_test)
+
+       
+    # Print shape of transformed data
+    print("X_train shape:", X_train.shape)
+    print("X_test shape:", X_test.shape)
+    
+    # Print a sample of transformed data
+    print("Sample transformed X_train:")
+    print(X_train[:5])
+else:
+    print("Target variable 'ACCLASS' not found in dataset.")
+
 #######################
 """
 Both the police department and the “general public” would make use of a software product that can give them an idea about the likelihood of fatal collisions that involve loss of life. For the police department it would assist them in taking better measures of security and better planning for road conditions around certain neighborhoods. For the public individuals, it would help them assess the need for additional precautions at certain times and weather conditions and neighborhoods
