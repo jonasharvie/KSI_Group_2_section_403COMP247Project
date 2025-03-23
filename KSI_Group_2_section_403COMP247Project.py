@@ -17,6 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
+np.random.seed(42)
 
 #-------- Jonas - Begin --------
 #1. Data exploration: a complete review and analysis of the dataset including:
