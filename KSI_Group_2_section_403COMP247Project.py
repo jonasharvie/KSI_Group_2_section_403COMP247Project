@@ -10,12 +10,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.model_selection import train_test_split
-import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from sklearn.feature_selection import VarianceThreshold
+from sklearn.preprocessing import MinMaxScaler, TargetEncoder, FunctionTransformer
+from sklearn.utils import resample
+from datetime import datetime
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
 
+#-------- Jonas - Begin --------
 #1. Data exploration: a complete review and analysis of the dataset including:
 
 #Load and describe data elements (columns), provide descriptions & types, ranges and values of elements as appropriate. – use pandas, numpy and any other python packages.
@@ -35,12 +38,17 @@ print(data_Group2.describe())
 print("\nCheck the missing values.\n")
 print(data_Group2.isnull().sum())
 
-#Graphs and visualizations – use pandas, matplotlib, seaborn, numpy and any other python packages, you also can use power BI desktop.
-# created a pairplot of all variables in the dataset
-#data_plot_Group2 = sns.pairplot(data_Group2)
-#plt.show()
+print("\nColumns\n")
+data_Group2_original_columns = data_Group2.columns
+print(data_Group2_original_columns)
 
+print("\nNumber of unique items\n")
+data_Group2_original_columns = data_Group2.columns
+print(data_Group2.nunique())
 
+#-------- Jonas - End --------
+
+#-------- Rubiya - Begin --------
 
 # Barplot for road classification
 plt.figure(figsize=(10, 6))
@@ -53,10 +61,16 @@ plt.show()
 
 #Scatterplot for geographic distribution
 plt.figure(figsize=(10, 6))
-sns.scatterplot(data=data_Group2, x='LONGITUDE', y='LATITUDE')
+sns.scatterplot(data=data_Group2, x='LONGITUDE', y='LATITUDE', hue='ACCLASS', palette={"Fatal": 'red', "Non-Fatal Injury": 'blue', "Property Damage O": 'blue'})
 plt.title('Accidents Location')
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
+
+# Create a custom legend
+legend_elements = [plt.Line2D([0], [0], marker='o', color='w', label='Fatal', markerfacecolor='red'),
+                   plt.Line2D([0], [0], marker='o', color='w', label='Non-Fatal', markerfacecolor='blue')]
+
+plt.legend(handles=legend_elements, title='ACCLASS')
 plt.show()
 
 #Visualization for Accidents by District
@@ -74,81 +88,81 @@ sns.heatmap(data_Group2.isnull(), cbar=False, cmap='viridis')
 plt.title('Missing Data Visualization')
 plt.show()
 
-
+#-------- Rubiya - End --------
 
 #2. Data modelling:
 
 #Data transformations – includes handling missing data, categorical data management, data normalization and standardizations as needed.
 
-# fisrt round of deciding which variables to drop
-def missing_data_percentage(df, threshold=20):
-    # amount of rows
-    total_rows = len(df)
-    
-    # missing values per column
-    missing_values = df.isnull().sum()
-    
-    # percentage of missing values
-    missing_percentage = (missing_values / total_rows) * 100
-    
-    # create dataframe listing the missing values, perentage, and Drop? data
-    missing_df = pd.DataFrame({
-        'Column Name': missing_values.index,
-        'Missing Values': missing_values.values,
-        'Percentage': missing_percentage.round(2),
-        'Drop?': ['Yes' if pct > threshold else 'No' for pct in missing_percentage]
-    })
-    
-    # sort missing_df in descending order
-    missing_df = missing_df.sort_values('Percentage', ascending=False).reset_index(drop=True)
-    
-    return missing_df
+#-------- Jeongho - Begin --------
+# Clean up Target variable "ACCLASS"
 
-missing_data_results = missing_data_percentage(data_Group2)
-
-print("\nMissing Data Results (Drop? = Yes when Percentage > 20):\n")
-print(missing_data_results)
-
-columns_to_drop = missing_data_results[missing_data_results['Drop?'] == 'Yes']['Column Name'].tolist()
-
-#data_Group2 = data_Group2.drop(columns_to_drop, axis=1)
-
-
-
-unique_counts = data_Group2.nunique()
-
-
-columns_to_drop = unique_counts[unique_counts > 5000].index
-
-data_Group2 = data_Group2.drop(columns=columns_to_drop)
-
-print("\nUnique counts:\n")
-print(data_Group2.nunique())
-
-data_Group2['DATE'] = pd.to_datetime(data_Group2['DATE'])
-data_Group2['time2'] = data_Group2['DATE'].dt.time
-print("\nAll unique times:\n")
-unique_times = data_Group2['time2'].unique()
-for time in sorted(unique_times):
-    print(time)
-
-
-
-# Remove rows where ACCLASS is empty
+# Remove rows where ACCLASS is empty 
 data_Group2 = data_Group2.dropna(subset=["ACCLASS"])
+# Encode target variable as binary (1 = Fatal, 0 = Non-Fatal)
+data_Group2["ACCLASS"] = np.where(data_Group2["ACCLASS"] == "Fatal", 1, 0)
+
+#-------- Jeongho - End --------
 
 
-#Jose's Data Transformation ----------------------Begin----------------------
+#-------- Jonas - Begin --------
+
+# Managing imbalanced classes
+
+# The target variable 'ACCLASS' is imbalanced (86% Non-Fatal to 14% Fatal)
+acclass_counts = data_Group2['ACCLASS'].value_counts()
+
+# Print the counts for each unique item
+print("\nAmount of rows for Fatal vs Non-Fatal BEFORE down-sampling:\n")
+print(acclass_counts)
+
+# Separate majority and minority classes
+data_Group2_majority = data_Group2[data_Group2['ACCLASS']==0]
+data_Group2_minority = data_Group2[data_Group2['ACCLASS']==1]
+ 
+# Downsample majority class
+data_Group2_majority_downsampled = resample(data_Group2_majority, replace=False, n_samples=data_Group2['ACCLASS'].value_counts()[1], random_state=123)
+ 
+# Combine minority class with downsampled majority class
+data_Group2 = pd.concat([data_Group2_majority_downsampled, data_Group2_minority])
+ 
+acclass_counts = data_Group2['ACCLASS'].value_counts()
+
+# Print the counts for each unique item
+print("\nAmount of rows for Fatal vs Non-Fatal After down-sampling:\n")
+print(acclass_counts)
+#-------- Jonas - End --------
+
+#-------- Jose - Begin --------
+# Data Transformation
 # List of columns to drop, based on spreadsheet we decided to remove
-columns_to_drop = [
-    "INDEX_", "ACCNUM", "DATE", "OFFSET", "LATITUDE", "LONGITUDE", "INJURY", "FATAL_NO", 
-    "VEHTYPE", "PEDTYPE", "PEDACT", "CYCLISTYPE", "CYCACT", "AUTOMOBILE", "EMERG_VEH", 
-    "ALCOHOL", "DISABILITY", "NEIGHBOURHOOD_158", "HOOD_140", "NEIGHBOURHOOD_140", 
-    "DIVISION", "ObjectID", "x", "y"
-]
+
+# Round 1 of dropping columns
+
+# List of columns to drop, because they are arbitrary unique identification generated after the accident
+columns_to_drop = ["INDEX", "ACCNUM", "OBJECTID"]
 
 # Drop the columns
 data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
+# List of columns to drop, because the description is unclear
+columns_to_drop = ["FATAL_NO", "x", "y"]
+
+# Drop the columns
+data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
+# List of columns to drop, because of clear duplication of data
+columns_to_drop = ["HOOD_158", "HOOD_140", "NEIGHBOURHOOD_140", "INJURY","VEHTYPE"]
+
+# Drop the columns
+data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
+# List of columns to drop, because majority of column is empty
+columns_to_drop = ["OFFSET"]
+
+# Drop the columns
+data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
 
 # Handle missing values for numerical columns (using mean/median)
 numerical_columns = data_Group2.select_dtypes(include=["int64", "float64"]).columns
@@ -156,11 +170,51 @@ for col in numerical_columns:
     # Fill missing values with the median of each column
     data_Group2[col].fillna(data_Group2[col].median(), inplace=True)
 
+
+
+# List of columns with binary classifications that are "Yes" or blank
+binary_columns = ["PEDESTRIAN","CYCLIST","AUTOMOBILE","MOTORCYCLE","TRUCK","TRSN_CITY_VEH","EMERG_VEH","PASSENGER","SPEEDING","AG_DRIV","REDLIGHT","ALCOHOL","DISABILITY"]
+# Change binary_columns from Yes/blank to Yes/No
+for column in binary_columns:
+    data_Group2[column] = np.where(data_Group2[column] == "Yes", "Yes", "No")
+    
+# Each Neighborhood will always have the same District, use other rows that have complete information in both columns to fill empty elements in the District column 
+def fill_district(df):
+    return df['DISTRICT'].fillna(df['DISTRICT'].iloc[0])
+
+data_Group2['DISTRICT'] = data_Group2.groupby('NEIGHBOURHOOD_158').apply(fill_district).reset_index(level=0, drop=True)
+
+# Correct typo
+data_Group2['ROAD_CLASS'] = data_Group2['ROAD_CLASS'].str.replace("Major Arterial ", "Major Arterial")
+
+
 # Handle missing values for categorical columns (replacing with "Unknown")
 categorical_columns = data_Group2.select_dtypes(include=["object"]).columns
 for col in categorical_columns:
     # Fill missing values with "Unknown" to avoid noise
     data_Group2[col].fillna("Unknown", inplace=True)
+
+
+# Convert age ranges to their midpoint
+def convert_age(value):
+    if 'to' in value:  # Ex. "60 to 64"
+        return (int(value.split(' to ')[0]) + int(value.split(' to ')[1])) / 2
+    elif value == 'Over 95':  # For "Over 95"
+        return 95
+    else:
+        return np.nan
+
+# Apply the conversion function
+data_Group2['INVAGE'] = data_Group2['INVAGE'].apply(convert_age)
+
+# Calculate the average of the column, ignoring NaN values
+average_value = data_Group2['INVAGE'].mean(skipna=True)
+
+# Replace NaN values (from "unknown") with the average
+data_Group2['INVAGE'] = data_Group2['INVAGE'].fillna(average_value)
+
+print("nunique after filling")
+print(data_Group2.nunique())
 
 # Verify changes
 print("Columns after dropping and handling missing data:")
@@ -168,89 +222,60 @@ print(data_Group2.columns)
 print("\nMissing values per column:")
 print(data_Group2.isnull().sum())
 
+data_Group2_features_pretransform = data_Group2
+
 #Encoding Categorical Values
 # List of fields for One-Hot Encoding (fields with relatively fewer categories)
-one_hot_fields = ['ROAD_CLASS', 'TRAFFCTL', 'LIGHT', 'VISIBILITY', 'RDSFCOND']
+#one_hot_fields = ['ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'CYCACT', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND']
 
 # Apply One-Hot Encoding
-data_Group2 = pd.get_dummies(data_Group2, columns=one_hot_fields, drop_first=True)
+#data_Group2 = pd.get_dummies(data_Group2, columns=one_hot_fields, drop_first=True)
 
-# List of fields for Label Encoding (fields where a numeric label suffices)
-label_encode_fields = ['IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND', 'PEDESTRIAN', 
-                       'CYCLIST', 'MOTORCYCLE', 'TRUCK', 'PASSENGER', 'SPEEDING', 
-                       'AG_DRIV', 'REDLIGHT', 'HOOD_158']
+#Encoding Categorical Values
+# List of fields for Binary Encoding (fields with relatively fewer categories)
+binary_columns = ["PEDESTRIAN","CYCLIST","AUTOMOBILE","MOTORCYCLE","TRUCK", "TRSN_CITY_VEH", "EMERG_VEH", "PASSENGER","SPEEDING","AG_DRIV", "REDLIGHT","ALCOHOL" ,"DISABILITY"]
 
-# Apply Label Encoding
-label_encoder = LabelEncoder()
-for field in label_encode_fields:
-    data_Group2[field] = label_encoder.fit_transform(data_Group2[field])
+
+# Change binary_columns from Yes/blank to 1/0
+for column in binary_columns:
+    data_Group2[column] = np.where(data_Group2[column] == "Yes", 1, 0)
+
+
+target_encode_columns = ['NEIGHBOURHOOD_158','STREET1', 'STREET2','ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'CYCACT', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND']
+enc_auto = TargetEncoder(smooth="auto")
+
+data_Group2[target_encode_columns] = enc_auto.fit_transform(data_Group2[target_encode_columns], data_Group2['ACCLASS'])
 
 # Verify the changes
 print("\nSample of data after encoding:")
 print(data_Group2.head())
 
-#Date and Time Handling
-# Extract hour from the TIME column
-data_Group2['Hour'] = data_Group2['TIME'] // 100  # Assuming TIME is in HHMM format (e.g., 2359)
+# Convert DATE to a day of the year
+data_Group2['DATE'] = pd.to_datetime(data_Group2['DATE'])
+data_Group2['DATE'] = data_Group2['DATE'].dt.strftime('%m/%d/%Y')
+data_Group2['DATE'] = data_Group2['DATE'].apply(lambda x: datetime.strptime(x, '%m/%d/%Y').timetuple().tm_yday)
 
-# Create categorical time periods (Morning, Afternoon, Evening, Night)
-def categorize_time(hour):
-    if 6 <= hour < 12:
-        return "Morning"
-    elif 12 <= hour < 18:
-        return "Afternoon"
-    elif 18 <= hour < 24:
-        return "Evening"
-    else:
-        return "Night"
+print("\nSample of data after encoding date time:")
+print(data_Group2['DATE'])
 
-# Apply the function to create a new column
-data_Group2['Time_Period'] = data_Group2['Hour'].apply(categorize_time)
+MinMax_columns = ['TIME', 'DATE']
 
-# Check unique categories to verify
-print("\nUnique values in Time_Period:")
-print(data_Group2['Time_Period'].unique())
-
-# Apply One-Hot Encoding robustly to include all possible categories
-time_period_dummies = pd.get_dummies(data_Group2['Time_Period'], prefix="Time_Period", drop_first=False)
-
-# Concatenate the encoded columns back to the DataFrame
-data_Group2 = pd.concat([data_Group2, time_period_dummies], axis=1)
-
-# Drop the original 'Time_Period' column as it's now encoded
-data_Group2.drop(columns=['Time_Period'], inplace=True)
-
-# Verify changes
-print("\nSample of data with extracted time features:")
-print(data_Group2[['TIME', 'Hour', 'Time_Period_Morning', 'Time_Period_Afternoon', 'Time_Period_Evening', 'Time_Period_Night']].head())
-
-#Normalizing or Standardizing Features
-# List of numeric fields to normalize/standardize
-numeric_fields = ['TIME']
-
-# Min-Max Normalization (scaling values to range [0, 1])+
+# Min-Max Normalization (scaling values to range [0, 1])
 min_max_scaler = MinMaxScaler()
-data_Group2['TIME_Normalized'] = min_max_scaler.fit_transform(data_Group2[['TIME']])
-
-# Standardization (scaling values to have mean 0 and standard deviation 1)
-standard_scaler = StandardScaler()
-data_Group2['TIME_Standardized'] = standard_scaler.fit_transform(data_Group2[['TIME']])
+data_Group2[MinMax_columns] = min_max_scaler.fit_transform(data_Group2[MinMax_columns])
+print("\nSample of data after minmax:")
+print(data_Group2.head())
 
 # Verify changes
 print("\nSample of normalized and standardized TIME values:")
-print(data_Group2[['TIME', 'TIME_Normalized', 'TIME_Standardized']].head())
-#Jose's Data Transformation ----------------------END----------------------
-
-#Feature Selection
-#Based on spreadsheet filled out by group members
+print(data_Group2[['TIME','DATE']].head())
+#-------- Jose - End --------
 
 
-# Convert target variable into binary classification
-# Combining 'Property Damage O' with 'Non-Fatal Injury' into 'Non-Fatal'
-data_Group2["ACCLASS"] = data_Group2["ACCLASS"].replace("Property Damage O", "Non-Fatal")
+# Tran Test Split
 
-# Encode target variable as binary (1 = Fatal, 0 = Non-Fatal)
-data_Group2["ACCLASS"] = np.where(data_Group2["ACCLASS"] == "Fatal", 1, 0)
+#-------- Jeongho - Begin --------
+
 
 # Define features (X) and target variable (y)
 X = data_Group2.drop(columns=["ACCLASS"])  # Features
@@ -262,173 +287,143 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Print class distribution in train and test sets
-print("Training set class distribution:\n", y_train.value_counts(normalize=True))
-print("Test set class distribution:\n", y_test.value_counts(normalize=True))
+print("\nTraining set class distribution:\n", y_train.value_counts(normalize=True))
+print("\nTest set class distribution:\n", y_test.value_counts(normalize=True))
 
-print("Train-Test Split Completed Successfully!")
+print("\nTrain-Test Split Completed Successfully!\n")
+
+#-------- Jeongho - End --------
+
+
+#-------- Jonas - Begin --------
+# Random Forest
+
+# Initialize and train a Random Forest Classifier
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+
+# Get feature importance
+
+
+feature_importances = rf.feature_importances_
+
+# Create a dictionary to store importances for all columns
+all_column_importances = {col: [] for col in X.columns}
+
+# Process one-hot encoded columns
+for feature, importance in zip(X.columns, feature_importances):
+    for col in X.columns:
+        if str(feature).startswith(f"{col}_") or feature == col:
+            all_column_importances[col].append(importance)
+            break
+
+# Calculate statistics for each column
+stats = []
+for col in X.columns:
+    importances = all_column_importances[col]
+    if importances:
+        stats.append({
+            'Column': col,
+            'Importance': importances
+        })
+    
+
+# Create summary DataFrame
+summary_df = pd.DataFrame(stats)
+
+summary_df = (summary_df
+    .sort_values(by='Importance', ascending=False)
+    .reset_index(drop=True))
+
+summary_df['Importance'] = summary_df['Importance'].apply(lambda x: x[0] if isinstance(x, list) else x).round(3)
+short_names = data_Group2_original_columns
+
+# Create a dictionary mapping long names to short names
+name_mapping = {long_name: short_name 
+                for short_name in short_names 
+                for long_name in summary_df['Column'] 
+                if short_name in long_name}
+
+# Replace the long names with short names
+summary_df['Column'] = summary_df['Column'].replace(name_mapping)
+summary_df['Column'] = summary_df['Column'].replace(name_mapping)
+
+summary_df = summary_df.sort_values('Importance', ascending=False).drop_duplicates('Column', keep='first').sort_index()
+print(summary_df.head(41))
+
+
+print("Done")
+#-------- Jonas - End --------
+
 
 #Pipelines
-#Shakuntala 
+#-------- Shakuntala - Begin --------
 
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
+def age_transformer(df):
+    df = df.copy()
+    df['INVAGE'] = df['INVAGE'].astype(str).apply(convert_age)
+    return df
 
-# Define categorical and numerical features
-categorical_features = [col for col in ['ROAD_CLASS', 'TRAFFCTL', 'LIGHT', 'VISIBILITY', 'RDSFCOND',
-                                        'IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND', 'PEDESTRIAN',
-                                        'CYCLIST', 'MOTORCYCLE', 'TRUCK', 'PASSENGER', 'SPEEDING', 'AG_DRIV', 'REDLIGHT']
-                        if col in data_Group2.columns]
+def date_transformer(df):
+    df = df.copy()
+    df['DATE'] = pd.to_datetime(df['DATE'])
+    df['DATE'] = df['DATE'].dt.strftime('%m/%d/%Y')
+    df['DATE'] = df['DATE'].apply(lambda x: datetime.strptime(x, '%m/%d/%Y').timetuple().tm_yday)
+    return df
 
-numerical_features = [col for col in ['TIME'] if col in data_Group2.columns]
+def binary_transformer(df):
+    df = df.copy()
+    binary_cols = ["PEDESTRIAN","CYCLIST","AUTOMOBILE","MOTORCYCLE","TRUCK", "TRSN_CITY_VEH", "EMERG_VEH", "PASSENGER","SPEEDING","AG_DRIV", "REDLIGHT","ALCOHOL" ,"DISABILITY"]
+    for col in binary_cols:
+        df[col] = np.where(df[col] == "Yes", 1, 0)
+    return df
 
-# Define transformers
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='most_frequent')),
-    ('encoder', OneHotEncoder(handle_unknown='ignore'))
+target_encode_cols = ['NEIGHBOURHOOD_158','STREET1', 'STREET2','ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'CYCACT', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND']
+
+minmax_cols = ['TIME', 'DATE']
+
+Group2_pipeline = Pipeline([
+    ('preprocessing', Pipeline([
+        ('age_conversion', FunctionTransformer(age_transformer)),
+        ('date_conversion', FunctionTransformer(date_transformer)),
+        ('binary_encoding', FunctionTransformer(binary_transformer))
+    ])),
+    
+    ('feature_engineering', ColumnTransformer([
+        ('target_encoder', TargetEncoder(smooth="auto"), target_encode_cols),
+        ('minmax_scaler', MinMaxScaler(), minmax_cols)
+    ], remainder='passthrough'))
 ])
 
-numerical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
-    ('scaler', StandardScaler())
-])
 
-# Define the full preprocessing pipeline
-preprocessing_pipeline = Pipeline(steps=[
-    ('preprocessor', ColumnTransformer(
-        transformers=[
-            ('num', numerical_transformer, numerical_features),
-            ('cat', categorical_transformer, categorical_features)
-        ],
-        remainder='passthrough'  # Keep other columns if necessary
-    ))
-])
-
-# Encode target variable if it exists
-if 'ACCLASS' in data_Group2.columns:
-    label_encoder = LabelEncoder()
-    data_Group2['ACCLASS'] = label_encoder.fit_transform(data_Group2['ACCLASS'])
-
-    # Define features (X) and target variable (y)
-    X = data_Group2.drop(columns=["ACCLASS"], errors='ignore')
-    y = data_Group2["ACCLASS"]
-
-    # Split into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=23, stratify=y
-    )
-
-    # Apply the full preprocessing pipeline to training and test data
-    X_train = preprocessing_pipeline.fit_transform(X_train)
-    X_test = preprocessing_pipeline.transform(X_test)
-
-       
-    # Print shape of transformed data
-    print("X_train shape:", X_train.shape)
-    print("X_test shape:", X_test.shape)
-    
-    # Print a sample of transformed data
-    print("Sample transformed X_train:")
-    print(X_train[:5])
-else:
-    print("Target variable 'ACCLASS' not found in dataset.")
-
-#######################
-"""
-Both the police department and the “general public” would make use of a software product that can give them an idea about the likelihood of fatal collisions that involve loss of life. For the police department it would assist them in taking better measures of security and better planning for road conditions around certain neighborhoods. For the public individuals, it would help them assess the need for additional precautions at certain times and weather conditions and neighborhoods
-
-Police want:
-    better measures of security
-    better planning for road conditions around certain neighborhoods
-Public Individuals want:
-    assess the need for additional precautions at certain
-        times
-        weather conditions
-        neighborhoods    
-
-"""
-#######################
-"""
-
-Although it could be assumed that the columns with high amounts of missing data are empty because 
-that the answer is no to that condition meaning that condition was present in the accident, it impossible to know if the empty data is an answer of "No" or if it is actually missing data. 
-the safest decision is to drop those features because there is a high chance of incorrect data, some of the ones with very high percent of missing data could also represent outliers or factors that are not representative of common details that affect crashes.
-Any column with more than 20% missing data is to be dropped because there is not enough data to accurately represent the population of the data.
-
-"""
-#######################
-"""
-NOTE
-Still need to manually review the remaining variables and decide which to drop or keep
-AND provide justification
-"""
-#######################
-"""
-Keep ACCLASS
-ACCLASS is the target variable
-it contains the following options
-Fatal
-Non-Fatal Injury
-Property Damage O (combine with "Non-Fatal Injury" to create "Non-Fatal" option)
-empty (drop this row)
-"""
-#######################
-"""
-Other Columns to Drop:
-    
- drop these are just ID numbers for tracking that were generated after the crash
-    OBJECTID
-    INDEX
-    ACCNUM
-    
-######################
-Keep CYCCOND as this helps to analyze cycle-related collisions and their impact on accident severity.
-Keep PEDESTRIAN because it helps in analyzing pedestrian safety and determining high-risk zones. 
-keep CYCLIST because Important for bicycle safety analysis and urban planning.
-Drop AUTOMOBILE because almost all accidents involve a driver; this feature is likely redundant.
-Keep MOTORCYCLE as it is important for analyzing patterns in motorcycle collissions and informing safety policies.
-Keep TRUCK as this is useful for identifying accident hotspots involving large vehicles.
-Keep TRSN_CITY_VEH because this could be useful for public policy and transit safety improvements.
-Keep PASSENGER because this helps in analyzing whether collisions involving passengers tend to be more severe.
-
-######################
-
-NOTE: check for columns with too many unique variables 
-SHOULD we drop all columns with too many unique variables?
-decide on cutoff point for too many unique variables 
+# Set features and target
+X = data_Group2_features_pretransform.drop('ACCLASS', axis=1)
+y = data_Group2_features_pretransform['ACCLASS']
 
 
- there are too many unique values, also the road names are easier representations of location
-    LATITUDE
-    LONGITUDE
+# Fit and transform
+data_Group2_processed = Group2_pipeline.fit_transform(X, y)
 
- drop because these variables are not listed or explained in the KSI_Glossary
-    x
-    y 
+# Convert back to DataFrame 
+processed_columns = (
+    target_encode_cols + 
+    minmax_cols + 
+    [col for col in X.columns if col not in target_encode_cols + minmax_cols]
+)
+data_Group2_processed = pd.DataFrame(data_Group2_processed, columns=processed_columns)
 
- drop because is old version of new variables (HOOD_158 and NEIGHBOURHOOD_158)
-    HOOD_140
-    NEIGHBOURHOOD_140
-
- drop because duplicate info of HOOD_158 (HOOD_158 is unique id for NEIGHBOURHOOD_158 which is name of neighborhood)
-    NEIGHBOURHOOD_158
-
-"""
-#######################
+print(data_Group2_processed.head())
 
 
-#Feature selection – use pandas and sci-kit learn. (The group needs to justify each feature used and any data columns discarded)
-#Train, Test data splitting – use numpy, sci-kit learn.
-#Managing imbalanced classes if needed. Check here for info: https://elitedatascience.com/imbalanced-classes
-#Use pipelines class to streamline all the pre-processing transformations
+# List of columns to drop, because they are of low importance
+columns_to_drop = ["SPEEDING", "TRUCK", "AUTOMOBILE", "PASSENGER", "AG_DRIV", "CYCLIST", "CYCCOND", "CYCACT", "TRSN_CITY_VEH", "REDLIGHT", "MOTORCYCLE", "ALCOHOL", "DISABILITY", "EMERG_VEH"]
 
-print("done")
+print("\nList of columns to drop, because they are of low importance (<0.01)\n")
+print(columns_to_drop)
 
-
-
-
+# Drop the columns
+data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
 
 
-
-
+print("\ndone")
