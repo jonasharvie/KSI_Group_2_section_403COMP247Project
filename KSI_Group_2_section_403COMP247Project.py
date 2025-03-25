@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, TargetEncoder, FunctionTransformer
+from sklearn.preprocessing import MinMaxScaler, TargetEncoder, FunctionTransformer,LabelEncoder
 from sklearn.utils import resample
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
@@ -216,6 +216,10 @@ average_value = data_Group2['INVAGE'].mean(skipna=True)
 # Replace NaN values (from "unknown") with the average
 data_Group2['INVAGE'] = data_Group2['INVAGE'].fillna(average_value)
 
+# Apply Label Encoding
+label_encoder = LabelEncoder()
+data_Group2['INVAGE'] = label_encoder.fit_transform(data_Group2['INVAGE'])
+
 print("nunique after filling")
 print(data_Group2.nunique())
 
@@ -365,12 +369,8 @@ print("Done")
 
 def age_transformer(df):
     df = df.copy()
-    df['INVAGE'] = df['INVAGE'].astype(str).apply(convert_age)
-    # Calculate the average of the column, ignoring NaN values
-    average_value = df['INVAGE'].mean(skipna=True)
-
-    # Replace NaN valueswith the average
-    df['INVAGE'] = df['INVAGE'].fillna(average_value)
+    label_encoder = LabelEncoder()
+    df['INVAGE'] = label_encoder.fit_transform(df['INVAGE'])
     return df
 
 def date_transformer(df):
@@ -389,7 +389,7 @@ def binary_transformer(df):
 
 target_encode_cols = ['NEIGHBOURHOOD_158','STREET1', 'STREET2','ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'CYCACT', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND']
 
-minmax_cols = ['TIME', 'DATE']
+minmax_cols = ['TIME', 'DATE','INVAGE']
 
 Group2_pipeline = Pipeline([
     ('preprocessing', Pipeline([
@@ -421,7 +421,7 @@ processed_columns = (
 )
 data_Group2_processed = pd.DataFrame(data_Group2_processed, columns=processed_columns)
 
-print(data_Group2_processed.head())
+print(data_Group2_processed['INVAGE'].head())
 
 joblib.dump(Group2_pipeline, 'Group2_pipeline.pkl')
 data_Group2_processed.to_csv('KSI_data_cleaned.csv', index=False)
