@@ -16,6 +16,7 @@ from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+import joblib
 
 np.random.seed(42)
 
@@ -258,7 +259,7 @@ data_Group2['DATE'] = data_Group2['DATE'].dt.strftime('%m/%d/%Y')
 data_Group2['DATE'] = data_Group2['DATE'].apply(lambda x: datetime.strptime(x, '%m/%d/%Y').timetuple().tm_yday)
 
 print("\nSample of data after encoding date time:")
-print(data_Group2['DATE'])
+print(data_Group2['DATE'].head())
 
 MinMax_columns = ['TIME', 'DATE']
 
@@ -352,7 +353,7 @@ summary_df['Column'] = summary_df['Column'].replace(name_mapping)
 summary_df['Column'] = summary_df['Column'].replace(name_mapping)
 
 summary_df = summary_df.sort_values('Importance', ascending=False).drop_duplicates('Column', keep='first').sort_index()
-print(summary_df.head(41))
+print(summary_df)
 
 
 print("Done")
@@ -397,7 +398,7 @@ Group2_pipeline = Pipeline([
         ('binary_encoding', FunctionTransformer(binary_transformer))
     ])),
     
-    ('feature_engineering', ColumnTransformer([
+    ('feature_encoding', ColumnTransformer([
         ('target_encoder', TargetEncoder(smooth="auto"), target_encode_cols),
         ('minmax_scaler', MinMaxScaler(), minmax_cols)
     ], remainder='passthrough'))
@@ -422,9 +423,13 @@ data_Group2_processed = pd.DataFrame(data_Group2_processed, columns=processed_co
 
 print(data_Group2_processed.head())
 
+joblib.dump(Group2_pipeline, 'Group2_pipeline.pkl')
+data_Group2_processed.to_csv('KSI_data_cleaned.csv', index=False)
 
 # List of columns to drop, because they are of low importance
-columns_to_drop = ["SPEEDING", "TRUCK", "AUTOMOBILE", "PASSENGER", "AG_DRIV", "CYCLIST", "CYCCOND", "CYCACT", "TRSN_CITY_VEH", "REDLIGHT", "MOTORCYCLE", "ALCOHOL", "DISABILITY", "EMERG_VEH"]
+columns_to_drop = ["TRUCK", "AUTOMOBILE", "PASSENGER", "AG_DRIV", "CYCLIST", "CYCCOND", "CYCACT", "TRSN_CITY_VEH", "REDLIGHT", "MOTORCYCLE", "ALCOHOL", "DISABILITY", "EMERG_VEH"]
+
+
 
 print("\nList of columns to drop, because they are of low importance (<0.01)\n")
 print(columns_to_drop)
