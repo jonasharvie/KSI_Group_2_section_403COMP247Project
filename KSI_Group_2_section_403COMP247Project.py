@@ -195,6 +195,7 @@ for col in categorical_columns:
     # Fill missing values with "Unknown" to avoid noise
     data_Group2[col].fillna("Unknown", inplace=True)
 
+data_Group2_features_pretransform = data_Group2.copy()
 
 # Convert age ranges to their midpoint
 def convert_age(value):
@@ -223,7 +224,7 @@ print(data_Group2.columns)
 print("\nMissing values per column:")
 print(data_Group2.isnull().sum())
 
-data_Group2_features_pretransform = data_Group2
+
 
 #Encoding Categorical Values
 # List of fields for One-Hot Encoding (fields with relatively fewer categories)
@@ -364,6 +365,11 @@ print("Done")
 def age_transformer(df):
     df = df.copy()
     df['INVAGE'] = df['INVAGE'].astype(str).apply(convert_age)
+    # Calculate the average of the column, ignoring NaN values
+    average_value = df['INVAGE'].mean(skipna=True)
+
+    # Replace NaN valueswith the average
+    df['INVAGE'] = df['INVAGE'].fillna(average_value)
     return df
 
 def date_transformer(df):
