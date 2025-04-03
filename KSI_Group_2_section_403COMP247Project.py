@@ -17,6 +17,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import joblib
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
 
 np.random.seed(42)
 
@@ -359,6 +362,13 @@ summary_df = summary_df.sort_values('Importance', ascending=False).drop_duplicat
 print(summary_df)
 
 
+# List of columns to drop, because they are of low importance
+columns_to_drop = ["TRUCK", "AUTOMOBILE", "PASSENGER", "AG_DRIV", "CYCLIST", "CYCCOND", "CYCACT", "TRSN_CITY_VEH", "REDLIGHT", "MOTORCYCLE", "ALCOHOL", "DISABILITY", "EMERG_VEH"]
+
+data_Group2_features_pretransform = data_Group2_features_pretransform.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
+data_Group2_features_pretransform.to_csv('KSI_features_cleaned_pretransform.csv', index=False)
+
 print("Done")
 #-------- Jonas - End --------
 
@@ -381,12 +391,12 @@ def date_transformer(df):
 
 def binary_transformer(df):
     df = df.copy()
-    binary_cols = ["PEDESTRIAN","CYCLIST","AUTOMOBILE","MOTORCYCLE","TRUCK", "TRSN_CITY_VEH", "EMERG_VEH", "PASSENGER","SPEEDING","AG_DRIV", "REDLIGHT","ALCOHOL" ,"DISABILITY"]
+    binary_cols = ["PEDESTRIAN","SPEEDING"]
     for col in binary_cols:
         df[col] = np.where(df[col] == "Yes", 1, 0)
     return df
 
-target_encode_cols = ['NEIGHBOURHOOD_158','STREET1', 'STREET2','ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'CYCACT', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND', 'CYCCOND']
+target_encode_cols = ['NEIGHBOURHOOD_158','STREET1', 'STREET2','ROAD_CLASS', 'INITDIR','DISTRICT', 'ACCLOC', 'TRAFFCTL', 'VISIBILITY', 'LIGHT', 'RDSFCOND', 'INVTYPE', 'MANOEUVER', 'PEDTYPE', 'PEDACT', 'CYCLISTYPE', 'DIVISION','IMPACTYPE', 'DRIVACT', 'DRIVCOND', 'PEDCOND']
 
 minmax_cols = ['TIME', 'DATE','INVAGE']
 
@@ -422,11 +432,8 @@ data_Group2_processed = pd.DataFrame(data_Group2_processed, columns=processed_co
 
 print(data_Group2_processed['INVAGE'].head())
 
-joblib.dump(Group2_pipeline, 'Group2_pipeline.pkl')
-data_Group2_processed.to_csv('KSI_data_cleaned.csv', index=False)
+joblib.dump(Group2_pipeline, 'Group2_pipeline.joblib')
 
-# List of columns to drop, because they are of low importance
-columns_to_drop = ["TRUCK", "AUTOMOBILE", "PASSENGER", "AG_DRIV", "CYCLIST", "CYCCOND", "CYCACT", "TRSN_CITY_VEH", "REDLIGHT", "MOTORCYCLE", "ALCOHOL", "DISABILITY", "EMERG_VEH"]
 
 
 
@@ -434,7 +441,16 @@ print("\nList of columns to drop, because they are of low importance (<0.01)\n")
 print(columns_to_drop)
 
 # Drop the columns
-data_Group2 = data_Group2.drop(columns=columns_to_drop, axis=1, errors='ignore')
+data_Group2_processed = data_Group2_processed.drop(columns=columns_to_drop, axis=1, errors='ignore')
+print(data_Group2_processed.shape)
+print(y.shape)
+data_Group2_processed = pd.concat([data_Group2_processed, y.reset_index(drop=True)], axis=1)
+print(data_Group2_processed)
+
+data_Group2_processed.to_csv('KSI_data_cleaned_and_transformed.csv', index=False)
+
+data_Group2_processed = data_Group2_processed.drop(columns=columns_to_drop, axis=1, errors='ignore')
+
 
 
 print("\ndone")
