@@ -303,6 +303,50 @@ print("\nTest set class distribution:\n", y_test.value_counts(normalize=True))
 print("\nTrain-Test Split Completed Successfully!\n")
 
 #-------- Jeongho - End --------
+#-------- Jeongho - Begin --------
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.model_selection import GridSearchCV
+
+# Initialize an SVM classifier
+svm_clf = SVC(kernel='rbf', C=1.0, gamma='scale', random_state=57)
+
+# Train SVM model
+svm_clf.fit(X_train, y_train)
+
+# Predictions
+y_pred_svm = svm_clf.predict(X_test)
+
+# Evaluate Model
+print("\nSVM Model Performance:")
+print("Accuracy:", accuracy_score(y_test, y_pred_svm))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_svm))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred_svm))
+
+# Hyperparameter tuning for SVM using GridSearchCV
+param_grid = {
+    'C': [0.1, 1, 10, 100],  # Regularization parameter
+    'kernel': ['linear', 'rbf', 'poly'],  # Kernel type
+    'gamma': ['scale', 'auto']  # Kernel coefficient
+}
+
+grid_search_svm = GridSearchCV(SVC(random_state=57), param_grid, cv=2, scoring='accuracy', verbose=2, n_jobs=-1)
+grid_search_svm.fit(X_train, y_train)
+
+# Best SVM Model
+best_svm = grid_search_svm.best_estimator_
+
+print("\nBest Parameters:", grid_search_svm.best_params_)
+print("\nBest Score:", grid_search_svm.best_score_)
+
+# Evaluate the best SVM model
+y_pred_best_svm = best_svm.predict(X_test)
+
+print("\nOptimized SVM Model Performance:")
+print("Accuracy:", accuracy_score(y_test, y_pred_best_svm))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_best_svm))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred_best_svm))
+#-------- Jeongho - End --------
 
 #-------- Jonas - Begin --------
 # Random Forest
