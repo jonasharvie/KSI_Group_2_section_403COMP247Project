@@ -5,13 +5,6 @@ Created on Tue Apr  8 15:53:02 2025
 @author: shaku
 """
 
-
-# -*- coding: utf-8 -*-
-"""
-COMP 247 Project - Neural Network Model (Grid & Random Search with Saved Models & ROC)
-Author: Group 2 (Updated by Shakuntala)
-"""
-
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
@@ -112,7 +105,6 @@ accuracy_grid = accuracy_score(y_test_classifier, y_pred_grid)
 report_grid = classification_report(y_test_classifier, y_pred_grid)
 confusion_grid = confusion_matrix(y_test_classifier, y_pred_grid)
 
-# ----------- Output - GRID ------------
 print("\n===== GRID SEARCH RESULTS =====")
 print("Best Parameters (Grid Search):")
 print(grid_search_nn.best_params_)
@@ -131,7 +123,7 @@ plt.title('ROC Curve - Grid Search (NN)')
 plt.savefig('roc_curve_nn_grid.png')
 plt.show()
 
-#---------------- RANDOMIZED SEARCH NN ----------------#
+#---------------- RANDOMIZED SEARCH Neural Network ----------------#
 nn_pipeline_random = Pipeline(steps=[
     ('mlp_classifier', MLPClassifier(max_iter=1000, random_state=42))
 ])
@@ -163,7 +155,6 @@ accuracy_random = accuracy_score(y_test_classifier, y_pred_random)
 report_random = classification_report(y_test_classifier, y_pred_random)
 confusion_random = confusion_matrix(y_test_classifier, y_pred_random)
 
-# ----------- Output - RANDOMIZED SEARCH ------------
 print("\n===== RANDOMIZED SEARCH RESULTS =====")
 print("Best Parameters (Randomized Search):")
 print(random_search_nn.best_params_)
