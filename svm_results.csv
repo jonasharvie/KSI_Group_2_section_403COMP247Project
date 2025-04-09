@@ -1,0 +1,12 @@
+Best Parameters,Best Estimator,Accuracy,Classification Report,Confusion Matrix
+"{'svm_classifier__C': 0.1, 'svm_classifier__gamma': 'auto', 'svm_classifier__kernel': 'poly'}","Pipeline(steps=[('svm_classifier',
+                 SVC(C=0.1, gamma='auto', kernel='poly', probability=True,
+                     random_state=57))])",0.9035004730368968,"              precision    recall  f1-score   support
+
+           0       0.93      0.88      0.90       529
+           1       0.88      0.93      0.91       528
+
+    accuracy                           0.90      1057
+   macro avg       0.90      0.90      0.90      1057
+weighted avg       0.90      0.90      0.90      1057
+","[[464, 65], [37, 491]]"
