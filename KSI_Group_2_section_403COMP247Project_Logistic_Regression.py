@@ -153,4 +153,11 @@ plt.title('ROC Curve - Randomized Grid Search')
 plt.legend(loc='lower right')
 plt.show()
 
+
+import pickle
+
+# Save the best model from Grid Search
+with open('logistic_model.pkl', 'wb') as f:
+    pickle.dump(grid_search.best_estimator_, f)
+
 # -------- Logistic Regression - End --------
