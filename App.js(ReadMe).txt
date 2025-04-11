@@ -1,0 +1,33 @@
+App.js
+This React application provides a user-friendly frontend interface for predicting accident severity. Users can input traffic-related data through intuitive form fields, including dropdowns for categorical data and direct inputs for numerical and textual fields. The app sends the collected data to the backend for prediction and displays the results interactively. Dropdowns for categories, dynamically loaded from the backend (/get-options).
+
+
+Architechture
+- React Framework: Built with React to create dynamic, responsive UI.
+- Axios Integration: Manages HTTP communication with the Flask backend.
+- React-Select: Enables searchable dropdowns for categorical fields.
+
+Error handling
+Gracefully handles HTTP request errors and provides meaningful error messages to the user. 
+Captures user inputs in real-time and validates them before submission.
+App also provides feedback for:
+- Missing required fields.
+- Issues during backend communication.
+- Server-side errors (e.g., invalid data or pipeline issues).
+
+
+Required inputs
+Date, Time, INVAGE, SPEEDING, NEIGHBOURHOOD_158, STREET1, STREET2, ROAD_CLASS, TRAFFCTL, VISIBILITY, LIGHT, RDSFCOND, MANOEUVER
+
+How to run
+Have Node.js installed
+Port http://127.0.0.1:12345. available
+Libraries: React, Axios, React-Select
+
+Expected Output
+Fatal or Non Fatal
+Error messages: If an error occurs during the prediction request, a user-friendly error message is displayed
+
+Missing required fields.
+
+

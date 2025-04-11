@@ -1,0 +1,38 @@
+Decision Tree Classifier with Hyperparameter Tuning
+
+This program applies a Decision Tree Classifier on a cleaned dataset (KSI_data_cleaned.csv) to classify accident severity (ACCLASS) using both Grid Search and Randomized Search for hyperparameter optimization. It evaluates the model performance using accuracy, classification reports, confusion matrices, and ROC curves.
+
+Program Files
+The code includes the following main components:
+
+-Data Loading – Load and copy the cleaned dataset
+
+-Preprocessing – Split features and target variable, then perform train-test split
+
+-Grid Search – Perform exhaustive search over specified hyperparameters
+
+-Randomized Search – Perform random search over hyperparameter space
+
+-Model Evaluation – Evaluate and compare both tuned models with metrics and ROC curves.
+
+Input required: KSI_data_cleaned.csv
+Target Column: ACCLASS
+
+How to run:
+Make sure you have the following Python packages installed
+pandas
+numpy
+matplotlib
+scikit-learn
+
+Expected outputs:
+Best Parameters from both Grid Search and Randomized Search
+Accuracy Scores
+Classification Reports (precision, recall, f1-score)
+Confusion Matrices
+
+Visual outputs:
+roc_curve_best_decision_tree_grid.png
+ROC Curve for the best model found using Grid Search
+roc_curve_best_decision_tree_random.png
+

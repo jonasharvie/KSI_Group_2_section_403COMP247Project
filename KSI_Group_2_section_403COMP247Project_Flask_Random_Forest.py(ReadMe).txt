@@ -1,0 +1,31 @@
+KSI_Group_2_section_403COMP247Project_Flask_Random_Forest
+
+This Flask application serves as the backend for predicting accident fatalities using a machine learning model. It processes user input, applies transformations, and makes predictions based on historical traffic accident data. The backend integrates seamlessly with a frontend React application and employs Flask, Pandas, Scikit-learn, and Flask-CORS for its functionality.
+
+Flask Component
+Handles HTTP requests and responses via endpoints: /predict and /get-options
+Uses Flask-CORS to enable cross-origin resource sharing for interaction with the frontend.
+
+Transformation and Data Handling
+age_transformer: Encodes ages using LabelEncoder.
+date_transformer: Converts dates into day-of-year numeric values for easier processing.
+binary_transformer: Processes binary fields (PEDESTRIAN, SPEEDING) and maps values (Yes/No) to integers (1/0).
+
+Dynamically adds default values (Unknown, No, 0.0) for missing input fields to ensure the machine learning model has consistent data
+Loads accident data from a CSV file for dropdown fields (/get-options)
+
+Machine Learning integration
+Scikit-learn pipeline (Group2_pipeline.joblib) for data preprocessing.
+Random Forest model (best_model_random_forest.joblib) for making predictions.
+
+
+Required inputs
+Date, Time, INVAGE, SPEEDING, NEIGHBOURHOOD_158, STREET1, STREET2, ROAD_CLASS, TRAFFCTL, VISIBILITY, LIGHT, RDSFCOND, MANOEUVER
+
+How to run
+This apps needs Python 3.1 or later, Flask, Flask-Cors, Pandas, NumPy, Scikit-learn
+Have these files ready: Group2_pipeline.joblib, best_model_random_forest.joblib, KSI_features_cleaned_pretransform.csv
+
+Outputs
+Fatal
+Non Fatal
